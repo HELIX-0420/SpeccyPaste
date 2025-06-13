@@ -49,4 +49,13 @@ require(["vs/editor/editor.main"], function () {
       monaco.editor.setModelLanguage(monacoEditor.getModel(), this.value);
     });
   }
+
+  const showOnlyOnPastePage = ["copyBtn", "shareBtn", "rawBtn"];
+  showOnlyOnPastePage.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = pasteId ? "inline-block" : "none";
+    }
+  });
+
 });

@@ -1,12 +1,12 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const nanoid = () => Math.random().toString(36).substr(2, 6);
+
 const app = express();
 const PORT = 3000;
 
 const pastesDir = path.join(__dirname, 'pastes');
-if (!fs.existsSync(pastesDir)) fs.mkdirSync(pastesDir);
+if (!fs.existsSync(pastesDir)) fs.mkdirSync(pastesDir, { recursive: true });
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -16,84 +16,86 @@ app.post('/documents', (req, res) => {
   const content = req.body.content;
   const expiryMinutes = parseInt(req.body.expiry) || 60;
   const language = req.body.language || 'plaintext';
-    const id = nanoid(6);
+  const id = Math.random().toString(36).substr(2, 6);
 
-    const created = Date.now();
-    const expires = created + expiryMinutes * 60 * 1000;
+  const created = Date.now();
+  const expires = created + expiryMinutes * 60 * 1000;
 
+  try {
     fs.writeFileSync(path.join(pastesDir, `${id}.txt`), content);
     fs.writeFileSync(path.join(pastesDir, `${id}.meta.json`), JSON.stringify({ created, expires, language }));
-
     res.json({ key: id });
+  } catch (err) {
+    console.error(" ^}^l Failed to save paste:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 // Raw paste content
 app.get('/raw/:id', (req, res) => {
-    const contentPath = path.join(pastesDir, `${req.params.id}.txt`);
-    const metaPath = path.join(pastesDir, `${req.params.id}.meta.json`);
+  const contentPath = path.join(pastesDir, `${req.params.id}.txt`);
+  const metaPath = path.join(pastesDir, `${req.params.id}.meta.json`);
 
-    if (!fs.existsSync(contentPath) || !fs.existsSync(metaPath)) {
-        return res.status(404).send('Not found');
-    }
+  if (!fs.existsSync(contentPath) || !fs.existsSync(metaPath)) {
+    return res.status(404).send('Not found');
+  }
 
-    const meta = JSON.parse(fs.readFileSync(metaPath));
-    if (Date.now() > meta.expires) {
-        // Delete expired files
-        fs.unlinkSync(contentPath);
-        fs.unlinkSync(metaPath);
-        return res.status(410).send('Paste expired');
-    }
+  const meta = JSON.parse(fs.readFileSync(metaPath));
+  if (Date.now() > meta.expires) {
+    fs.unlinkSync(contentPath);
+    fs.unlinkSync(metaPath);
+    return res.status(410).send('Paste expired');
+  }
 
-    res.sendFile(contentPath);
+  res.sendFile(contentPath);
 });
 
-// Metadata route for expiration info
+// Metadata route
 app.get('/meta/:id', (req, res) => {
-    const metaPath = path.join(pastesDir, `${req.params.id}.meta.json`);
-    if (!fs.existsSync(metaPath)) return res.status(404).send('Not found');
+  const metaPath = path.join(pastesDir, `${req.params.id}.meta.json`);
+  if (!fs.existsSync(metaPath)) return res.status(404).send('Not found');
 
-    const meta = JSON.parse(fs.readFileSync(metaPath));
-    if (Date.now() > meta.expires) {
-        // Cleanup if expired
-        const contentPath = path.join(pastesDir, `${req.params.id}.txt`);
-        if (fs.existsSync(contentPath)) fs.unlinkSync(contentPath);
-        fs.unlinkSync(metaPath);
-        return res.status(410).send('Paste expired');
-    }
+  const meta = JSON.parse(fs.readFileSync(metaPath));
+  if (Date.now() > meta.expires) {
+    const contentPath = path.join(pastesDir, `${req.params.id}.txt`);
+    if (fs.existsSync(contentPath)) fs.unlinkSync(contentPath);
+    fs.unlinkSync(metaPath);
+    return res.status(410).send('Paste expired');
+  }
 
-    res.json(meta);
+  res.json(meta);
 });
 
 // Serve UI
 app.get('/p/:id', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Periodic cleanup of expired pastes
+// Cleanup expired pastes every 30 mins
 setInterval(() => {
-    const files = fs.readdirSync(pastesDir);
-    const now = Date.now();
+  const files = fs.readdirSync(pastesDir);
+  const now = Date.now();
 
-    files.forEach(file => {
-        if (file.endsWith('.meta.json')) {
-            const id = file.replace('.meta.json', '');
-            const metaPath = path.join(pastesDir, file);
-            const contentPath = path.join(pastesDir, `${id}.txt`);
+  files.forEach(file => {
+    if (file.endsWith('.meta.json')) {
+      const id = file.replace('.meta.json', '');
+      const metaPath = path.join(pastesDir, file);
+      const contentPath = path.join(pastesDir, `${id}.txt`);
 
-            try {
-                const meta = JSON.parse(fs.readFileSync(metaPath));
-                if (meta.expires && now > meta.expires) {
-                    fs.unlinkSync(metaPath);
-                    if (fs.existsSync(contentPath)) fs.unlinkSync(contentPath);
-                    console.log(`Deleted expired paste: ${id}`);
-                }
-            } catch {
-                console.warn(`Failed to parse or clean: ${file}`);
-            }
+      try {
+        const meta = JSON.parse(fs.readFileSync(metaPath));
+        if (meta.expires && now > meta.expires) {
+          fs.unlinkSync(metaPath);
+          if (fs.existsSync(contentPath)) fs.unlinkSync(contentPath);
+          console.log(` ^=^w^q  ^o Deleted expired paste: ${id}`);
         }
-    });
-}, 30 * 60 * 1000); // every 30 minutes
+      } catch {
+        console.warn(` ^z   ^o Failed to clean: ${file}`);
+      }
+    }
+  });
+}, 30 * 60 * 1000);
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running at http://0.0.0.0:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });

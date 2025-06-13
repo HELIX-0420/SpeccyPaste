@@ -132,9 +132,7 @@ footer {
 
 .paste-header .logo {
   margin: 0;
-  font-size: 1.2rem;
-  text-align: center;
-  color: #f1f1f1;
+  width: 100px;
 }
 
 /* Make the editor container take full height */

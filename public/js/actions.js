@@ -1,34 +1,112 @@
-document.getElementById("copyBtn").addEventListener("click", () => {
-  navigator.clipboard.writeText(monacoEditor.getValue());
-  alert("Copied!");
-});
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  } else {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand("copy");
+    } catch (err) {
+      console.error("Fallback clipboard error:", err);
+    }
+    document.body.removeChild(textArea);
+  }
+}
 
-document.getElementById("shareBtn").addEventListener("click", () => {
-  const content = monacoEditor.getValue();
-  const expiry = parseInt(document.getElementById("expiry").value);
-  const lang = document.getElementById("language").value;
+document.addEventListener("DOMContentLoaded", () => {
+  const saveBtn = document.getElementById("saveBtn");
+  const shareBtn = document.getElementById("shareBtn");
+  const copyBtn = document.getElementById("copyBtn");
+  const rawBtn = document.getElementById("rawBtn");
+  const shareMenu = document.getElementById("shareMenu");
+  const copyLinkBtn = document.getElementById("copyLinkBtn");
+  const qrCodeBtn = document.getElementById("qrCodeBtn");
 
-  fetch("/documents", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, expiry, language: lang })
-  })
-  .then(res => res.json())
-  .then(data => {
-    const url = `/p/${data.key}`;
-    navigator.clipboard.writeText(`${window.location.origin}${url}`);
-    window.history.pushState({}, '', url);
-    alert("Shared! URL copied: " + window.location.origin + url);
-  })
-  .catch(() => alert("Failed to save paste"));
-});
+  if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+      const content = monacoEditor.getValue();
+      copyToClipboard(content);
+      alert("Copied!");
+    });
+  }
 
-document.getElementById("saveBtn").addEventListener("click", () => {
-  document.getElementById("shareBtn").click();
-});
+  async function createAndSharePaste() {
+    const content = monacoEditor.getValue();
+    const expiry = parseInt(document.getElementById("expiry").value);
+    const lang = document.getElementById("language").value;
 
-document.getElementById("rawBtn").addEventListener("click", () => {
-  if (pasteId) {
-    window.open(`/raw/${pasteId}`, '_blank');
+    try {
+      const res = await fetch("/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, expiry, language: lang })
+      });
+
+      const text = await res.text();
+
+      if (!res.ok) {
+        console.error("Server Error:", text);
+        throw new Error("Server responded with error");
+      }
+
+      const data = JSON.parse(text);
+      const url = `/p/${data.key}`;
+      copyToClipboard(`${window.location.origin}${url}`);
+      window.location.href = url;
+    } catch (err) {
+      console.error("❌ Error saving paste:", err);
+      alert("Failed to save paste. Check browser console.");
+    }
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener("click", createAndSharePaste);
+  }
+
+  if (shareBtn && shareMenu) {
+    shareBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // prevent outside click from closing immediately
+      shareMenu.classList.toggle("hidden");
+    });
+
+    // Close shareMenu when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!shareMenu.contains(e.target) && e.target !== shareBtn) {
+        shareMenu.classList.add("hidden");
+      }
+    });
+  }
+
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener("click", () => {
+      if (pasteId) {
+        const url = `${window.location.origin}/p/${pasteId}`;
+        copyToClipboard(url);
+        alert("Copied share link!");
+      }
+      shareMenu.classList.add("hidden");
+    });
+  }
+
+  if (qrCodeBtn) {
+    qrCodeBtn.addEventListener("click", () => {
+      if (!pasteId) return;
+      const url = `${window.location.origin}/p/${pasteId}`;
+      window.open(`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=200x200`, '_blank');
+      shareMenu.classList.add("hidden");
+    });
+  }
+
+  if (rawBtn) {
+    rawBtn.addEventListener("click", () => {
+      if (typeof pasteId !== "undefined" && pasteId) {
+        window.open(`/raw/${pasteId}`, '_blank');
+      }
+    });
   }
 });
