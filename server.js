@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { nanoid } = require('nanoid');
+const nanoid = () => Math.random().toString(36).substr(2, 6);
 const app = express();
 const PORT = 3000;
 
@@ -94,6 +94,6 @@ setInterval(() => {
     });
 }, 30 * 60 * 1000); // every 30 minutes
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
