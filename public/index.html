@@ -23,9 +23,9 @@
     </div>
 
     <nav class="nav">
+      <a href="https://speccynerd.dev/"><span>🏠</span> Home Page</a>
       <a href="/"><span>📋</span> New Paste</a>
       <a href="#" id="saveBtn"><span>💾</span> Save Paste</a>
-      <a href="#"><span>🎨</span> Themes</a>
       <a href="#"><span>🌙</span> Dark Mode</a>
     </nav>
 
@@ -95,126 +95,10 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
-  <script>
-  require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs" } });
-
-  let monacoEditor;
-  const urlParts = window.location.pathname.split("/");
-  const pasteId = urlParts[1] === "p" ? urlParts[2] : null;
-
-  require(["vs/editor/editor.main"], function () {
-    const expiryInfoEl = document.getElementById("expiryInfo");
-
-    if (pasteId) {
-      Promise.all([
-        fetch(`/raw/${pasteId}`).then(res => res.ok ? res.text() : "// Paste not found"),
-        fetch(`/meta/${pasteId}`).then(res => res.ok ? res.json() : {})
-      ])
-      .then(([code, meta]) => {
-        const lang = meta.language || "plaintext";
-
-        // Now we create the editor with the correct language and content
-        monacoEditor = monaco.editor.create(document.getElementById("editor"), {
-          value: code,
-          language: lang,
-          theme: "vs-dark",
-          fontSize: 14,
-          lineNumbers: "on",
-          automaticLayout: true,
-          scrollBeyondLastLine: true,
-          readOnly: true
-        });
-
-        // Disable editing UI
-        document.getElementById("saveBtn").style.display = "none";
-        document.getElementById("shareBtn").disabled = true;
-        document.getElementById("language").disabled = true;
-        document.getElementById("expiry").disabled = true;
-
-        // Set dropdown to match
-        document.getElementById("language").value = lang;
-
-        // Show & start the live timer
-        if (meta.expires) {
-          expiryInfoEl.style.display = "block";
-
-          const updateTimer = () => {
-            const remaining = meta.expires - Date.now();
-            if (remaining > 0) {
-              const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
-              const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-              const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-              const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-              expiryInfoEl.innerText = `⏳ This paste will expire in ${days}d ${hours}h ${minutes}m ${seconds}s.`;
-            } else {
-              expiryInfoEl.innerText = "⚠️ This paste has expired.";
-              clearInterval(timerInterval);
-            }
-          };
-
-          updateTimer();
-          const timerInterval = setInterval(updateTimer, 1000);
-        }
-      })
-      .catch(() => {
-        document.getElementById("editor").innerText = "// Failed to load paste";
-      });
-
-    } else {
-      // No pasteId — normal editor
-      monacoEditor = monaco.editor.create(document.getElementById("editor"), {
-        value: "// Paste your code here...",
-        language: "plaintext",
-        theme: "vs-dark",
-        fontSize: 14,
-        lineNumbers: "on",
-        automaticLayout: true,
-        scrollBeyondLastLine: true
-      });
-
-      // Handle live language change
-      document.getElementById("language").addEventListener("change", function () {
-        const lang = this.value;
-        monaco.editor.setModelLanguage(monacoEditor.getModel(), lang);
-      });
-    }
-
-    // Common buttons (copy/share/save)
-    document.getElementById("copyBtn").addEventListener("click", function () {
-      navigator.clipboard.writeText(monacoEditor.getValue());
-      alert("Copied!");
-    });
-
-    document.getElementById("shareBtn").addEventListener("click", function () {
-      const content = monacoEditor.getValue();
-      const expiry = parseInt(document.getElementById("expiry").value);
-      const lang = document.getElementById("language").value;
-
-      fetch("/documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, expiry, language: lang })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const url = `/p/${data.key}`;
-        navigator.clipboard.writeText(`${window.location.origin}${url}`);
-        window.history.pushState({}, '', url);
-        alert("Shared! URL copied: " + window.location.origin + url);
-      })
-      .catch(() => alert("Failed to save paste"));
-    });
-
-    document.getElementById("saveBtn").addEventListener("click", function () {
-      document.getElementById("shareBtn").click();
-    });
-
-    document.getElementById("rawBtn").addEventListener("click", function () {
-      if (pasteId) {
-        window.open(`/raw/${pasteId}`, '_blank');
-      }
-    });
-  });
-  </script>
+  <script src="/js/config.js"></script>
+  <script src="/js/timer.js"></script>
+  <script src="/js/actions.js"></script>
+  <script src="/js/editor-init.js"></script>
+  <script src="/js/theme.js"></script>
 </body>
 </html>
