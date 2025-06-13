@@ -26,7 +26,7 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  gap: 2rem;
+  gap: 1.0rem;
 }
 
 .profile {
@@ -110,15 +110,15 @@ footer {
 }
 
 .social-icons a {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   color: #fff;
   text-decoration: none;
   transition: transform 0.2s;
 }
 
 .social-icons a:hover {
-  transform: scale(1.2);
-  color: #1da1f2;
+  transform: scale(1.0);
+  color: #4E2A84;
 }
 
 /* Main Layout */

@@ -13,15 +13,16 @@ app.use(express.static('public'));
 
 // Save paste
 app.post('/documents', (req, res) => {
-    const content = req.body.content;
-    const expiryMinutes = parseInt(req.body.expiry) || 10080; // default to 7 days
+  const content = req.body.content;
+  const expiryMinutes = parseInt(req.body.expiry) || 60;
+  const language = req.body.language || 'plaintext';
     const id = nanoid(6);
 
     const created = Date.now();
     const expires = created + expiryMinutes * 60 * 1000;
 
     fs.writeFileSync(path.join(pastesDir, `${id}.txt`), content);
-    fs.writeFileSync(path.join(pastesDir, `${id}.meta.json`), JSON.stringify({ created, expires }));
+    fs.writeFileSync(path.join(pastesDir, `${id}.meta.json`), JSON.stringify({ created, expires, language }));
 
     res.json({ key: id });
 });

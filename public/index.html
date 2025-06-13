@@ -33,7 +33,7 @@
       <div class="social-icons">
         <a href="https://discord.com/users/129415071175671808" target="_blank"><i class="fab fa-discord"></i></a>
         <a href="https://twitter.com/yourhandle" target="_blank"><i class="fab fa-twitter"></i></a>
-        <a href="https://github.com/yourhandle" target="_blank"><i class="fab fa-github"></i></a>
+        <a href="https://github.com/HELIX-0420" target="_blank"><i class="fab fa-github"></i></a>
         <a href="mailto:you@example.com"><i class="fas fa-envelope"></i></a>
       </div>
       <p>&copy; 2025 Speccynerd.dev</p>
@@ -79,8 +79,13 @@
         </select>
 
         <select id="expiry" title="Expiration">
+          <option value="10">10 Minutes</option>
+          <option value="30">30 Minutes</option>
           <option value="60" selected>1 Hour</option>
+          <option value="180">3 Hours</option>
+          <option value="720">12 Hours</option>
           <option value="1440">1 Day</option>
+          <option value="2880">2 Days</option>
           <option value="10080">7 Days</option>
           <option value="43200">30 Days</option>
         </select>
@@ -91,101 +96,46 @@
 
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
   <script>
-    require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs" } });
+  require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs" } });
 
-    let monacoEditor;
-    const urlParts = window.location.pathname.split("/");
-    const pasteId = urlParts[1] === "p" ? urlParts[2] : null;
+  let monacoEditor;
+  const urlParts = window.location.pathname.split("/");
+  const pasteId = urlParts[1] === "p" ? urlParts[2] : null;
 
-    require(["vs/editor/editor.main"], function () {
-      monacoEditor = monaco.editor.create(document.getElementById("editor"), {
-        value: "// Paste your code here...",
-        language: "plaintext",
-        theme: "vs-dark",
-        fontSize: 14,
-        lineNumbers: "on",
-        automaticLayout: true,
-        scrollBeyondLastLine: true
-      });
-
-      if (pasteId) {
-        fetch(`/raw/${pasteId}`)
-          .then(res => res.ok ? res.text() : Promise.reject("Not found"))
-          .then(code => {
-            monacoEditor.setValue(code);
-            monacoEditor.updateOptions({ readOnly: true });
-            document.getElementById("saveBtn").style.display = "none";
-            document.getElementById("shareBtn").disabled = true;
-            document.getElementById("language").disabled = true;
-            document.getElementById("expiry").disabled = true;
-
-            const storedLang = localStorage.getItem(`lang-${pasteId}`);
-            const storedExpiry = localStorage.getItem(`expiry-${pasteId}`);
-
-            if (storedLang) {
-              monaco.editor.setModelLanguage(monacoEditor.getModel(), storedLang);
-              document.getElementById("language").value = storedLang;
-            }
-
-            if (storedExpiry) {
-              document.getElementById("expiry").value = storedExpiry;
-            }
-          })
-          .catch(() => monacoEditor.setValue("// Paste not found"));
-      }
-
-      document.getElementById("language").addEventListener("change", function () {
-        const lang = this.value;
-        monaco.editor.setModelLanguage(monacoEditor.getModel(), lang);
-        if (pasteId) {
-          localStorage.setItem(`lang-${pasteId}`, lang);
-        }
-      });
-
-      document.getElementById("copyBtn").addEventListener("click", function () {
-        navigator.clipboard.writeText(monacoEditor.getValue());
-        alert("Copied!");
-      });
-
-      document.getElementById("shareBtn").addEventListener("click", function () {
-        const content = monacoEditor.getValue();
-        const expiry = parseInt(document.getElementById("expiry").value);
-        const lang = document.getElementById("language").value;
-
-        fetch("/documents", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, expiry })
-        })
-          .then(res => res.json())
-          .then(data => {
-            localStorage.setItem(`lang-${data.key}`, lang);
-            localStorage.setItem(`expiry-${data.key}`, expiry);
-            const url = `/p/${data.key}`;
-            navigator.clipboard.writeText(`${window.location.origin}${url}`);
-            window.history.pushState({}, '', url);
-            alert("Shared! URL copied: " + window.location.origin + url);
-          })
-          .catch(() => alert("Failed to save paste"));
-      });
-
-      document.getElementById("saveBtn").addEventListener("click", function () {
-        document.getElementById("shareBtn").click();
-      });
-
-      document.getElementById("rawBtn").addEventListener("click", function () {
-        if (pasteId) {
-          window.open(`/raw/${pasteId}`, '_blank');
-        }
-      });
-    });
+  require(["vs/editor/editor.main"], function () {
+    const expiryInfoEl = document.getElementById("expiryInfo");
 
     if (pasteId) {
-      const expiryInfoEl = document.getElementById("expiryInfo");
+      Promise.all([
+        fetch(`/raw/${pasteId}`).then(res => res.ok ? res.text() : "// Paste not found"),
+        fetch(`/meta/${pasteId}`).then(res => res.ok ? res.json() : {})
+      ])
+      .then(([code, meta]) => {
+        const lang = meta.language || "plaintext";
 
-      fetch(`/meta/${pasteId}`)
-        .then(res => res.json())
-        .then(meta => {
+        // Now we create the editor with the correct language and content
+        monacoEditor = monaco.editor.create(document.getElementById("editor"), {
+          value: code,
+          language: lang,
+          theme: "vs-dark",
+          fontSize: 14,
+          lineNumbers: "on",
+          automaticLayout: true,
+          scrollBeyondLastLine: true,
+          readOnly: true
+        });
+
+        // Disable editing UI
+        document.getElementById("saveBtn").style.display = "none";
+        document.getElementById("shareBtn").disabled = true;
+        document.getElementById("language").disabled = true;
+        document.getElementById("expiry").disabled = true;
+
+        // Set dropdown to match
+        document.getElementById("language").value = lang;
+
+        // Show & start the live timer
+        if (meta.expires) {
           expiryInfoEl.style.display = "block";
 
           const updateTimer = () => {
@@ -202,11 +152,69 @@
             }
           };
 
-          updateTimer(); // run immediately
+          updateTimer();
           const timerInterval = setInterval(updateTimer, 1000);
-        });
+        }
+      })
+      .catch(() => {
+        document.getElementById("editor").innerText = "// Failed to load paste";
+      });
+
+    } else {
+      // No pasteId — normal editor
+      monacoEditor = monaco.editor.create(document.getElementById("editor"), {
+        value: "// Paste your code here...",
+        language: "plaintext",
+        theme: "vs-dark",
+        fontSize: 14,
+        lineNumbers: "on",
+        automaticLayout: true,
+        scrollBeyondLastLine: true
+      });
+
+      // Handle live language change
+      document.getElementById("language").addEventListener("change", function () {
+        const lang = this.value;
+        monaco.editor.setModelLanguage(monacoEditor.getModel(), lang);
+      });
     }
 
+    // Common buttons (copy/share/save)
+    document.getElementById("copyBtn").addEventListener("click", function () {
+      navigator.clipboard.writeText(monacoEditor.getValue());
+      alert("Copied!");
+    });
+
+    document.getElementById("shareBtn").addEventListener("click", function () {
+      const content = monacoEditor.getValue();
+      const expiry = parseInt(document.getElementById("expiry").value);
+      const lang = document.getElementById("language").value;
+
+      fetch("/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, expiry, language: lang })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const url = `/p/${data.key}`;
+        navigator.clipboard.writeText(`${window.location.origin}${url}`);
+        window.history.pushState({}, '', url);
+        alert("Shared! URL copied: " + window.location.origin + url);
+      })
+      .catch(() => alert("Failed to save paste"));
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", function () {
+      document.getElementById("shareBtn").click();
+    });
+
+    document.getElementById("rawBtn").addEventListener("click", function () {
+      if (pasteId) {
+        window.open(`/raw/${pasteId}`, '_blank');
+      }
+    });
+  });
   </script>
 </body>
 </html>
