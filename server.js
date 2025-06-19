@@ -13,23 +13,35 @@ app.use(express.static('public'));
 
 // Save paste
 app.post('/documents', (req, res) => {
-  const content = req.body.content;
+  let content = req.body.content;
   const expiryMinutes = parseInt(req.body.expiry) || 60;
   const language = req.body.language || 'plaintext';
+  const redacted = !!req.body.redacted;
   const id = Math.random().toString(36).substr(2, 6);
 
   const created = Date.now();
   const expires = created + expiryMinutes * 60 * 1000;
 
+  // Redact sensitive data if requested
+  if (redacted) {
+    content = content
+      .replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g, "[REDACTED IP]")
+      .replace(/(?:token|api[_-]?key|authorization)[:=]?\s*["']?[a-z0-9\-_\.]{16,}["']?/gi, "[REDACTED TOKEN]");
+  }
+
   try {
     fs.writeFileSync(path.join(pastesDir, `${id}.txt`), content);
-    fs.writeFileSync(path.join(pastesDir, `${id}.meta.json`), JSON.stringify({ created, expires, language }));
+    fs.writeFileSync(
+      path.join(pastesDir, `${id}.meta.json`),
+      JSON.stringify({ created, expires, language, redacted })
+    );
     res.json({ key: id });
   } catch (err) {
-    console.error(" ^}^l Failed to save paste:", err);
+    console.error("❌ Failed to save paste:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 // Raw paste content
 app.get('/raw/:id', (req, res) => {

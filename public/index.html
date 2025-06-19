@@ -49,6 +49,14 @@
 
     <div class="editor-container">
       <div class="floating-actions top-right">
+
+        <!-- Toggle button for IP redaction -->
+        <button id="toggleSensitive" title="Toggle sensitive visibility">
+          <i class="fas fa-lock" id="sensitiveIcon"></i>
+        </button>
+
+        <input type="hidden" id="redactionState" name="redactionState" value="false" />
+
         <button id="copyBtn" title="Copy Code"><i class="fas fa-copy"></i></button>
         <button id="shareBtn" title="Share File"><i class="fas fa-link"></i></button>
         <button id="rawBtn" title="View Raw"><i class="fas fa-code"></i></button>

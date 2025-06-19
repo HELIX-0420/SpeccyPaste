@@ -36,15 +36,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function createAndSharePaste() {
-    const content = monacoEditor.getValue();
+    let content = monacoEditor.getValue();
     const expiry = parseInt(document.getElementById("expiry").value);
     const lang = document.getElementById("language").value;
+    const redacted = window.__hideSensitive__ || false;
 
     try {
       const res = await fetch("/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, expiry, language: lang })
+        body: JSON.stringify({ content, expiry, language: lang, redacted })
       });
 
       const text = await res.text();
@@ -70,11 +71,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (shareBtn && shareMenu) {
     shareBtn.addEventListener("click", (e) => {
-      e.stopPropagation(); // prevent outside click from closing immediately
+      e.stopPropagation();
       shareMenu.classList.toggle("hidden");
     });
 
-    // Close shareMenu when clicking outside
     document.addEventListener("click", (e) => {
       if (!shareMenu.contains(e.target) && e.target !== shareBtn) {
         shareMenu.classList.add("hidden");
@@ -109,4 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // 🔥 Removed: Redaction toggle logic — handled by editor-init.js only
 });
