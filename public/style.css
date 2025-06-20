@@ -259,12 +259,129 @@ textarea {
   background-color: rgba(255, 0, 0, 0.25) !important;
   border-bottom: 2px dotted red;
 }
-
 .fogged-token {
   background-color: rgba(255, 0, 0, 0.1) !important;
   color: transparent !important;
   text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
   border-bottom: 2px dotted red;
-  pointer-events: none;
-  user-select: none;
+  user-select: none !important;
+  pointer-events: none !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+.fogged-token-after {
+  display: none;
+}
+
+.paste-options {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.dropdown-toggle {
+  background-color: #1a1a1a;
+  border: 1px solid #444;
+  color: #ff3c3c;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  background-color: #2b2b2b;
+  border: 1px solid #555;
+  border-radius: 6px;
+  list-style: none;
+  padding: 8px 0;
+  margin-top: 5px;
+  z-index: 100;
+  min-width: 160px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.dropdown-menu li {
+  padding: 8px 12px;
+  color: #e4e4e4;
+  cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+  background-color: #3a3a3a;
+}
+
+#pastePassword {
+  margin-top: 8px;
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+  background-color: #2c2c2c;
+  border: 1px solid #555;
+  color: #e4e4e4;
+}
+
+.hidden {
+  display: none !important;
+}
+
+
+#passwordOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.password-box {
+  background: #1a1a1a;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+}
+
+.password-box p {
+  margin: 8px 0;
+  color: #f0f0f0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.password-box input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  background: #ddd;
+  border: none;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+  font-size: 15px;
+  outline: none;
+}
+
+.password-box button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #ff3c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.password-box button:hover {
+  background: #e03131;
 }

@@ -27,7 +27,6 @@
       <a href="https://speccynerd.dev/"><span>🏠</span> Home Page</a>
       <a href="/"><span>📋</span> New Paste</a>
       <a href="#" id="saveBtn"><span>💾</span> Save Paste</a>
-      <a href="#"><span>🌙</span> Dark Mode</a>
     </nav>
 
     <footer>
@@ -98,8 +97,30 @@
           <option value="10080">7 Days</option>
           <option value="43200">30 Days</option>
         </select>
+
+        <select id="settingsDropdown" class="dropdown-control">
+          <option value="" disabled selected>OPTIONS</option>
+          <option value="add-password">🔒 Add Password</option>
+        </select>
+        <input type="hidden" id="pastePassword" />
+
       </div>
-      <div id="editor" class="code-box"></div>
+      <div id="code-box">
+        <div id="editor"></div>
+      </div>
+
+
+
+      <div id="passwordOverlay" class="password-overlay" style="display: none;">
+        <div class="password-box">
+          <p><span class="lock-icon">🔐</span> This paste is password protected.</p>
+          <p>Enter the password below to view:</p>
+          <input type="password" id="passwordInput" placeholder="Enter password">
+          <button id="submitPassword">Unlock</button>
+        </div>
+      </div>
+
+    </div>
     </div>
   </main>
 
