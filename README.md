@@ -36,13 +36,3 @@
 | Desktop View | Mobile View |
 |--------------|-------------|
 | ![Desktop](https://your-image-link.com/desktop.png) | ![Mobile](https://your-image-link.com/mobile.png) |
-
----
-
-## 🛠️ Getting Started
-
-```bash
-git clone https://github.com/HELIX-0420/SpeccyPaste.git
-cd SpeccyPaste
-npm install
-node server.js
